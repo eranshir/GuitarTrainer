@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guitar Interval Trainer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Guitar Interval Trainer</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Interval Type:</label>
+                <div class="radio-group">
+                    <input type="radio" id="sixths" name="interval" value="sixths" checked>
+                    <label for="sixths">Sixths</label>
+                    
+                    <input type="radio" id="thirds" name="interval" value="thirds">
+                    <label for="thirds">Thirds</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="scale">Scale:</label>
+                <select id="scale">
+                    <option value="C">C Major</option>
+                    <option value="G">G Major</option>
+                    <option value="D">D Major</option>
+                    <option value="A">A Major</option>
+                    <option value="F">F Major</option>
+                    <option value="E">E Major</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="tempo">Tempo (BPM):</label>
+                <input type="range" id="tempo" min="15" max="120" value="60">
+                <span id="tempoValue">60</span>
+            </div>
+
+            <button id="playButton">Play</button>
+        </div>
+
+        <div class="display">
+            <div id="tabDisplay" class="tab-display">
+                <!-- Tab will be displayed here -->
+            </div>
+            <div id="noteDisplay" class="note-display">
+                <!-- Note names will be displayed here -->
+            </div>
+        </div>
+    </div>
+    <script src="intervals.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 

@@ -1,6 +1,23 @@
 // Initialize audio
 const guitarSound = new GuitarSound();
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize mute button state
+    const muteButton = document.getElementById('muteButton');
+    muteButton.textContent = guitarSound.isMuted ? '🔇' : '🔊';
+    muteButton.classList.toggle('muted', guitarSound.isMuted);
+    
+    // Add click handler
+    muteButton.onclick = () => guitarSound.toggleMute();
+    
+    // Add keyboard shortcut
+    document.addEventListener('keydown', (event) => {
+        if (event.key.toLowerCase() === 'm') {
+            guitarSound.toggleMute();
+        }
+    });
+});
+
 const FRET_NOTES = {
     e: {  // high E string
         0: "E",
@@ -69,6 +86,29 @@ const TEST_SCALES = [
     "E",  // E major (F#, C#, G#, D#)
     "F"   // F major (Bb)
 ];
+
+// Add a validation map for known good positions
+const VALID_POSITIONS = {
+    thirds: {
+        'E-G': [
+            { string1: 'e', fret1: 0, string2: 'G', fret2: 0 },  // Open E to open G
+            { string1: 'B', fret1: 5, string2: 'G', fret2: 0 }   // 5th fret B to open G
+            // Add more valid positions from guitar_tab.txt
+        ],
+        'E-C': [
+            { string1: 'e', fret1: 0, string2: 'B', fret2: 1 },  // Open E to 1st fret B (C)
+            { string1: 'B', fret1: 5, string2: 'G', fret2: 5 }   // 5th fret B (E) to 5th fret G (C)
+        ]
+        // Add more third intervals
+    }
+};
+
+function logPositions(interval) {
+    console.log(`\nInterval ${interval.notes}:`);
+    interval.positions.forEach((pos, idx) => {
+        console.log(`Position ${idx + 1}: ${pos.string1}(${pos.fret1}) to ${pos.string2}(${pos.fret2})`);
+    });
+}
 
 function getScaleNotes(root) {
     // Handle root notes with flats (e.g., "Bb")
@@ -199,12 +239,15 @@ function findIntervalPositions(note1, note2, intervalType = 'sixths') {
     console.log(`\nFinding positions for ${note1} to ${note2} (${intervalType})`);
     
     const positions = [];
-    
+
     for (const [string1, string2] of stringPairs) {
+        // Skip if same string
+        if (string1 === string2) continue;
+        
         // Try both note orders
         const combinations = [
-            { str1: string1, str2: string2, n1: note1, n2: note2 },
-            { str1: string2, str2: string1, n1: note2, n2: note1 }
+            { str1: string1, str2: string2, n1: note1, n2: note2 }
+            // Remove reverse order - we want specific note order for intervals
         ];
         
         for (const combo of combinations) {
@@ -212,17 +255,25 @@ function findIntervalPositions(note1, note2, intervalType = 'sixths') {
             const fret2 = findFretForNote(combo.str2, combo.n2);
             
             if (fret1 !== null && fret2 !== null && 
-                fret1 <= 5 && fret2 <= 5 && 
-                FRET_NOTES[combo.str1][fret1] === combo.n1 && 
-                FRET_NOTES[combo.str2][fret2] === combo.n2) {
+                fret1 <= 5 && fret2 <= 5) {
                 
-                console.log(`Found valid position: ${combo.str1}(${fret1}):${combo.n1} to ${combo.str2}(${fret2}):${combo.n2}`);
-                positions.push({ 
-                    string1: combo.str1, 
-                    fret1: fret1, 
-                    string2: combo.str2, 
-                    fret2: fret2 
-                });
+                const actualNote1 = FRET_NOTES[combo.str1][fret1];
+                const actualNote2 = FRET_NOTES[combo.str2][fret2];
+                
+                // Strict note matching - no reversing order
+                if ((actualNote1 === combo.n1 || (actualNote1.includes('/') && actualNote1.split('/').includes(combo.n1))) &&
+                    (actualNote2 === combo.n2 || (actualNote2.includes('/') && actualNote2.split('/').includes(combo.n2)))) {
+                    
+                    console.log(`Found valid position: ${combo.str1}(${fret1}):${actualNote1} to ${combo.str2}(${fret2}):${actualNote2}`);
+                    positions.push({ 
+                        string1: combo.str1, 
+                        fret1: fret1, 
+                        string2: combo.str2, 
+                        fret2: fret2,
+                        note1: actualNote1,  // Store actual notes
+                        note2: actualNote2
+                    });
+                }
             }
         }
     }
@@ -263,12 +314,13 @@ function playInterval(scale, intervalType) {
                 break;
 
             case 'depth':
-                // Complete all positions for current interval before moving to next interval
-                position = interval.positions[currentPositionIndex];
-                currentPositionIndex = (currentPositionIndex + 1) % interval.positions.length;
-                if (currentPositionIndex === 0) {
-                    currentIndex = (currentIndex + 1) % intervals.length;
+                // If we've shown all positions for this interval
+                if (currentPositionIndex >= interval.positions.length) {
+                    currentPositionIndex = 0;  // Reset position index
+                    currentIndex = (currentIndex + 1) % intervals.length;  // Move to next interval
                 }
+                position = intervals[currentIndex].positions[currentPositionIndex];
+                currentPositionIndex++;
                 break;
 
             case 'random':
@@ -289,14 +341,17 @@ function playInterval(scale, intervalType) {
         const tab = createTabNotation(position.string1, position.fret1, position.string2, position.fret2);
         tabDisplay.innerHTML = tab.map(line => line + '<br>').join('');
         
-        // Display the notes
-        noteDisplay.textContent = interval.notes;
+        // Get actual notes from the fret positions
+        const actualNote1 = FRET_NOTES[position.string1][position.fret1];
+        const actualNote2 = FRET_NOTES[position.string2][position.fret2];
+        
+        // Display the actual notes instead of the interval notes
+        noteDisplay.textContent = `${actualNote1}-${actualNote2}`;
         document.getElementById('intervalCount').textContent = 
             `Interval ${currentIndex + 1} of ${intervals.length}`;
         
-        // Play the notes
-        const [note1, note2] = interval.notes.split('-');
-        guitarSound.playInterval(note1, note2);
+        // Play the actual notes
+        guitarSound.playInterval(actualNote1, actualNote2);
     }
 
     // Start playing
@@ -382,57 +437,89 @@ function generateThirds(root) {
 function testScale(root) {
     console.log(`\nTesting ${root} major scale:`);
     const scaleNotes = getScaleNotes(root);
-    console.log("Scale notes:", scaleNotes);
     
-    // Test thirds
-    console.log("\nTesting thirds:");
+    console.log("\nValidating Thirds:");
     const thirds = generateThirds(root);
-    thirds.forEach((third, index) => {
-        console.log(`\nThird ${index + 1}:`);
-        console.log(`Notes: ${third.notes}`);
-        console.log("Possible positions:");
+    thirds.forEach(third => {
+        console.log(`\nThird ${third.notes}:`);
         third.positions.forEach(pos => {
             const note1 = FRET_NOTES[pos.string1][pos.fret1];
             const note2 = FRET_NOTES[pos.string2][pos.fret2];
-            console.log(`${pos.string1}(${pos.fret1}):${note1} to ${pos.string2}(${pos.fret2}):${note2}`);
+            const isValid = validatePosition(pos, third.notes.split('-')[0], third.notes.split('-')[1]);
+            console.log(`${pos.string1}(${pos.fret1}):${note1} to ${pos.string2}(${pos.fret2}):${note2} - ${isValid ? '✓' : '✗'}`);
         });
     });
-    
-    // Test sixths
-    console.log("\nTesting sixths:");
+
+    console.log("\nValidating Sixths:");
     const sixths = generateSixths(root);
-    sixths.forEach((sixth, index) => {
-        console.log(`\nSixth ${index + 1}:`);
-        console.log(`Notes: ${sixth.notes}`);
-        console.log("Possible positions:");
+    sixths.forEach(sixth => {
+        console.log(`\nSixth ${sixth.notes}:`);
         sixth.positions.forEach(pos => {
             const note1 = FRET_NOTES[pos.string1][pos.fret1];
             const note2 = FRET_NOTES[pos.string2][pos.fret2];
-            console.log(`${pos.string1}(${pos.fret1}):${note1} to ${pos.string2}(${pos.fret2}):${note2}`);
+            const isValid = validatePosition(pos, sixth.notes.split('-')[0], sixth.notes.split('-')[1]);
+            console.log(`${pos.string1}(${pos.fret1}):${note1} to ${pos.string2}(${pos.fret2}):${note2} - ${isValid ? '✓' : '✗'}`);
         });
     });
 }
 
-// Test all scales
-TEST_SCALES.forEach(scale => testScale(scale)); 
-
-// Add this before generateSixths
-function logPositions(interval) {
-    console.log(`\nInterval ${interval.notes}:`);
-    interval.positions.forEach((pos, idx) => {
-        console.log(`Position ${idx + 1}: ${pos.string1}(${pos.fret1}) to ${pos.string2}(${pos.fret2})`);
-    });
-} 
-
-// Add after guitarSound initialization
-document.getElementById('muteButton').onclick = () => guitarSound.toggleMute();
-
-// Add keyboard shortcut
-document.addEventListener('keydown', (event) => {
-    if (event.key.toLowerCase() === 'm') {
-        guitarSound.toggleMute();
+function validatePosition(pos, expectedNote1, expectedNote2) {
+    // First check: different strings
+    if (pos.string1 === pos.string2) {
+        console.log(`Invalid: same string ${pos.string1}`);
+        return false;
     }
-}); 
+
+    const actualNote1 = FRET_NOTES[pos.string1][pos.fret1];
+    const actualNote2 = FRET_NOTES[pos.string2][pos.fret2];
+    
+    // Check if notes match (including enharmonic equivalents)
+    const note1Valid = actualNote1 === expectedNote1 || 
+                      (actualNote1.includes('/') && actualNote1.split('/').includes(expectedNote1));
+    const note2Valid = actualNote2 === expectedNote2 || 
+                      (actualNote2.includes('/') && actualNote2.split('/').includes(expectedNote2));
+    
+    return note1Valid && note2Valid;
+}
+
+function validateAllPositions() {
+    console.log("\nValidating All Positions:");
+    
+    // Test all scales
+    TEST_SCALES.forEach(scale => {
+        console.log(`\n=== ${scale} Major Scale ===`);
+        const scaleNotes = getScaleNotes(scale);
+        
+        console.log("\nValidating Thirds:");
+        const thirds = generateThirds(scale);
+        thirds.forEach(third => {
+            console.log(`\nThird ${third.notes}:`);
+            third.positions.forEach(pos => {
+                const note1 = FRET_NOTES[pos.string1][pos.fret1];
+                const note2 = FRET_NOTES[pos.string2][pos.fret2];
+                const isValid = validatePosition(pos, third.notes.split('-')[0], third.notes.split('-')[1]);
+                console.log(`${pos.string1}(${pos.fret1}):${note1} to ${pos.string2}(${pos.fret2}):${note2} - ${isValid ? '✓' : '✗'}`);
+            });
+        });
+
+        console.log("\nValidating Sixths:");
+        const sixths = generateSixths(scale);
+        sixths.forEach(sixth => {
+            console.log(`\nSixth ${sixth.notes}:`);
+            sixth.positions.forEach(pos => {
+                const note1 = FRET_NOTES[pos.string1][pos.fret1];
+                const note2 = FRET_NOTES[pos.string2][pos.fret2];
+                const isValid = validatePosition(pos, sixth.notes.split('-')[0], sixth.notes.split('-')[1]);
+                console.log(`${pos.string1}(${pos.fret1}):${note1} to ${pos.string2}(${pos.fret2}):${note2} - ${isValid ? '✓' : '✗'}`);
+            });
+        });
+    });
+}
+
+// Run validation after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    validateAllPositions();
+});
 
 // Add after the other event listeners
 const tempoSlider = document.getElementById('tempo');
@@ -440,6 +527,7 @@ const tempoValue = document.getElementById('tempoValue');
 
 // Update tempo display and restart if playing
 tempoSlider.oninput = function() {
+    // Update the display value
     tempoValue.textContent = this.value;
     
     // If currently playing, restart with new tempo
@@ -448,4 +536,7 @@ tempoSlider.oninput = function() {
         playButton.click();  // Stop
         playButton.click();  // Start again with new tempo
     }
-}; 
+};
+
+// Initialize tempo display with default value
+tempoValue.textContent = tempoSlider.value;

@@ -9,6 +9,7 @@ class GuitarSound {
         const muteButton = document.getElementById('muteButton');
         muteButton.textContent = this.isMuted ? '🔇' : '🔊';
         muteButton.classList.toggle('muted', this.isMuted);
+        console.log('Mute toggled:', this.isMuted);
     }
 
     async initAudio() {
@@ -75,7 +76,7 @@ class GuitarSound {
     // Convert note name to frequency
     noteToFrequency(note) {
         const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        const octave = 4; // Middle octave
+        const octave = 3; // Lower octave
         
         // Handle flats
         note = note.replace('Db', 'C#')

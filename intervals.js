@@ -292,12 +292,28 @@ function playInterval(scale, intervalType) {
     let intervals = intervalType === 'sixths' ? generateSixths(scale) : generateThirds(scale);
     let currentIndex = 0;
     let currentPositionIndex = 0;
+    let isPaused = false;
+    let intervalId = null;  // Track the interval ID
     const mode = document.getElementById('practiceMode').value;
 
     // Get UI elements
     const playButton = document.getElementById('playButton');
+    const pauseButton = document.getElementById('pauseButton');
     const tabDisplay = document.getElementById('tabDisplay');
     const noteDisplay = document.getElementById('noteDisplay');
+
+    function togglePause() {
+        isPaused = !isPaused;
+        pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+        
+        if (isPaused) {
+            clearInterval(intervalId);
+            intervalId = null;
+        } else {
+            const tempo = document.getElementById('tempo').value;
+            intervalId = setInterval(showInterval, (60 / tempo) * 1000);
+        }
+    }
 
     function getNextPosition() {
         const interval = intervals[currentIndex];
@@ -357,15 +373,22 @@ function playInterval(scale, intervalType) {
     // Start playing
     showInterval();
     const tempo = document.getElementById('tempo').value;
-    const intervalId = setInterval(showInterval, (60 / tempo) * 1000);
+    intervalId = setInterval(showInterval, (60 / tempo) * 1000);
     
     // Update play button to stop
     playButton.textContent = 'Stop';
+    pauseButton.disabled = false;
+    
     playButton.onclick = () => {
-        clearInterval(intervalId);
+        if (intervalId) clearInterval(intervalId);
         playButton.textContent = 'Play';
+        pauseButton.disabled = true;
+        pauseButton.textContent = 'Pause';
+        isPaused = false;
         playButton.onclick = startPlaying;
     };
+    
+    pauseButton.onclick = togglePause;
 }
 
 // Update startPlaying to be async

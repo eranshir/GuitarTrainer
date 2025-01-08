@@ -226,3 +226,33 @@ button:hover {
         padding: 10px;
     }
 } 
+
+.playback-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+    margin-top: 10px;
+}
+
+#pauseButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+} 
+
+@media (max-width: 768px) {
+    .playback-controls {
+        flex-direction: row;
+        width: 100%;
+    }
+    
+    .playback-controls button {
+        flex: 1;
+        margin-top: 0;
+    }
+    
+    button {
+        width: 100%;
+        margin-top: 20px;
+        font-size: 1.6em;
+    }
+} 

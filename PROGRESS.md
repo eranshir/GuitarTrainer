@@ -1,6 +1,11 @@
 # Guitar Interval Trainer - Progress Log
 
-## v1.0.8 (Current)
+## v1.0.9 (Current)
+- Added pause/resume functionality
+- Fixed playback controls layout on mobile
+- Fixed stop button after pause/resume
+
+## v1.0.8
 - Fixed sound frequencies to match actual guitar string tunings
 - Each note now plays at the correct octave based on its string
 - Added proper string-based frequency calculations

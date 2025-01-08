@@ -1,6 +1,11 @@
 # Guitar Interval Trainer - Progress Log
 
-## v1.0.7 (Current)
+## v1.0.8 (Current)
+- Fixed sound frequencies to match actual guitar string tunings
+- Each note now plays at the correct octave based on its string
+- Added proper string-based frequency calculations
+
+## v1.0.7
 - Fixed note display to show actual notes being played
 - Fixed depth-first practice mode
 - Fixed mute button functionality

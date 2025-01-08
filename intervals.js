@@ -350,8 +350,8 @@ function playInterval(scale, intervalType) {
         document.getElementById('intervalCount').textContent = 
             `Interval ${currentIndex + 1} of ${intervals.length}`;
         
-        // Play the actual notes
-        guitarSound.playInterval(actualNote1, actualNote2);
+        // Pass string information when playing notes
+        guitarSound.playInterval(actualNote1, actualNote2, position.string1, position.string2);
     }
 
     // Start playing

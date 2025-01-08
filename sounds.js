@@ -34,20 +34,39 @@ class GuitarSound {
         }
         
         try {
+            // Create nodes
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
+            const harmonicGain = this.audioContext.createGain();
+            const harmonicOsc = this.audioContext.createOscillator();
             
-            oscillator.type = 'triangle';
+            // Main note settings
+            oscillator.type = 'triangle';  // Base tone
             oscillator.frequency.value = frequency;
             
-            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+            // Add harmonic for more guitar-like sound
+            harmonicOsc.type = 'sine';
+            harmonicOsc.frequency.value = frequency * 2;  // First harmonic
+            harmonicGain.gain.value = 0.2;  // Harmonic volume
             
+            // Guitar-like envelope
+            const now = this.audioContext.currentTime;
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.3, now + 0.005);  // Quick attack
+            gainNode.gain.exponentialRampToValueAtTime(0.1, now + 0.1);  // Initial decay
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);  // Long decay
+            
+            // Connect nodes
             oscillator.connect(gainNode);
+            harmonicOsc.connect(harmonicGain);
+            harmonicGain.connect(gainNode);
             gainNode.connect(this.audioContext.destination);
             
-            oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + duration);
+            // Start and stop
+            oscillator.start(now);
+            harmonicOsc.start(now);
+            oscillator.stop(now + duration);
+            harmonicOsc.stop(now + duration);
         } catch (error) {
             console.error('Error playing note:', error);
         }

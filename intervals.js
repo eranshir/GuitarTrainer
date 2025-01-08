@@ -433,3 +433,19 @@ document.addEventListener('keydown', (event) => {
         guitarSound.toggleMute();
     }
 }); 
+
+// Add after the other event listeners
+const tempoSlider = document.getElementById('tempo');
+const tempoValue = document.getElementById('tempoValue');
+
+// Update tempo display and restart if playing
+tempoSlider.oninput = function() {
+    tempoValue.textContent = this.value;
+    
+    // If currently playing, restart with new tempo
+    const playButton = document.getElementById('playButton');
+    if (playButton.textContent === 'Stop') {
+        playButton.click();  // Stop
+        playButton.click();  // Start again with new tempo
+    }
+}; 

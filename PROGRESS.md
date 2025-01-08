@@ -1,6 +1,12 @@
 # Guitar Interval Trainer - Progress Log
 
-## v1.0.5 (Current)
+## v1.0.6 (Current)
+- Fixed tempo slider functionality
+- Improved guitar sound with harmonics and better envelope
+- Added quick attack and natural decay for more realistic sound
+- Fixed audio initialization issues
+
+## v1.0.5
 - Added sound support using Web Audio API
 - Added mute button with keyboard shortcut (M)
 - Starts muted by default

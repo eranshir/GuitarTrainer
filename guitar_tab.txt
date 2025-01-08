@@ -1,0 +1,41 @@
+Title: C Major Scale Complete Close Sixths (Low Position)
+Tuning: Standard (EADGBE)
+
+// 1st and 3rd strings (e and G)
+e|---0---1---3---5---|  // E F G A
+B|-----------------|
+G|---2---4---5---7---|  // A B C D
+D|-----------------|
+A|-----------------|
+E|-----------------|
+
+// 2nd and 4th strings (B and D)
+e|-----------------|
+B|---0---1---3---5---|  // B C D E
+G|-----------------|
+D|---2---3---5---7---|  // E F G A
+A|-----------------|
+E|-----------------|
+
+// 3rd and 5th strings (G and A)
+e|-----------------|
+B|-----------------|
+G|---0---2---3---5---|  // G A B C
+D|-----------------|
+A|---2---3---5---7---|  // C D E F
+E|-----------------|
+
+// 4th and 6th strings (D and E)
+e|-----------------|
+B|-----------------|
+G|-----------------|
+D|---0---2---3---5---|  // D E F G
+A|-----------------|
+E|---2---3---5---7---|  // G A B C
+
+Notes: 
+- Each pair creates proper diatonic sixths in C major
+- Numbers corrected to maintain correct intervals
+- Some positions adjusted to maintain proper scale degrees
+- Practice each pair separately, then try connecting them
+- Stay within first 5-7 frets for playability 

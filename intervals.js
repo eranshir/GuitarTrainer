@@ -132,24 +132,28 @@ const STRINGS = ["e", "B", "G", "D", "A", "E"];
 // Function to generate all sixths for a scale
 function generateSixths(root) {
     const scaleNotes = getScaleNotes(root);
+    console.log("\nGenerating sixths for", root, "major scale:", scaleNotes);
     const sixths = [];
     
-    for (let i = 0; i < 8; i++) {
-        const startNote = scaleNotes[i % 7];
+    for (let i = 0; i < 7; i++) {
+        const startNote = scaleNotes[i];
         const sixthNote = findSixthInScale(startNote, scaleNotes);
+        console.log(`\nFinding positions for ${startNote}-${sixthNote}`);
         
         const allPositions = findIntervalPositions(startNote, sixthNote);
+        console.log(`Found ${allPositions.length} positions`);
         
         if (allPositions.length > 0) {
             sixths.push({
                 notes: `${startNote}-${sixthNote}`,
-                positions: allPositions  // Store all possible positions
+                positions: allPositions
             });
+            logPositions(sixths[sixths.length - 1]);
         }
     }
     
     return sixths;
-} 
+}
 
 // Function to find best positions for an interval
 function findIntervalPositions(note1, note2, intervalType = 'sixths') {
@@ -160,12 +164,33 @@ function findIntervalPositions(note1, note2, intervalType = 'sixths') {
         ["D", "A"],    // strings 4 and 5 (D to A)
         ["A", "E"]     // strings 5 and 6 (A to E)
     ] : [
-        // Sixths pairs (both adjacent and separated by one string)
-        ["e", "B"],    // strings 1 and 2
-        ["B", "G"],    // strings 2 and 3
-        ["e", "G"],    // strings 1 and 3
-        ["B", "D"],    // strings 2 and 4
-        ["G", "A"],    // strings 3 and 5
+        // Adjacent strings
+        ["e", "B"],    // strings 1-2
+        ["B", "G"],    // strings 2-3
+        ["G", "D"],    // strings 3-4
+        ["D", "A"],    // strings 4-5
+        ["A", "E"],    // strings 5-6
+        
+        // One string separation (all combinations)
+        ["e", "G"],    // strings 1-3
+        ["B", "D"],    // strings 2-4
+        ["G", "A"],    // strings 3-5
+        ["D", "E"],    // strings 4-6
+        ["A", "G"],    // strings 5-3 (reverse)
+        ["E", "D"],    // strings 6-4 (reverse)
+        ["B", "e"],    // strings 2-1 (reverse)
+        ["G", "B"],    // strings 3-2 (reverse)
+        ["D", "G"],    // strings 4-3 (reverse)
+        ["A", "D"],    // strings 5-4 (reverse)
+        ["E", "A"],    // strings 6-5 (reverse)
+        
+        // Two strings separation (all combinations)
+        ["e", "D"],    // strings 1-4
+        ["B", "A"],    // strings 2-5
+        ["G", "E"],    // strings 3-6
+        ["D", "e"],    // strings 4-1 (reverse)
+        ["A", "B"],    // strings 5-2 (reverse)
+        ["E", "G"]     // strings 6-3 (reverse)
     ];
     
     console.log(`\nFinding positions for ${note1} to ${note2} (${intervalType})`);
@@ -173,17 +198,29 @@ function findIntervalPositions(note1, note2, intervalType = 'sixths') {
     const positions = [];
     
     for (const [string1, string2] of stringPairs) {
-        const fret1 = findFretForNote(string1, note1);
-        const fret2 = findFretForNote(string2, note2);
+        // Try both note orders
+        const combinations = [
+            { str1: string1, str2: string2, n1: note1, n2: note2 },
+            { str1: string2, str2: string1, n1: note2, n2: note1 }
+        ];
         
-        if (fret1 !== null && fret2 !== null && 
-            fret1 <= 5 && fret2 <= 5 && 
-            FRET_NOTES[string1][fret1] === note1 && 
-            FRET_NOTES[string2][fret2] === note2 &&
-            STRINGS.indexOf(string2) > STRINGS.indexOf(string1)) {
+        for (const combo of combinations) {
+            const fret1 = findFretForNote(combo.str1, combo.n1);
+            const fret2 = findFretForNote(combo.str2, combo.n2);
             
-            console.log(`Found valid position: ${string1}(${fret1}):${note1} to ${string2}(${fret2}):${note2}`);
-            positions.push({ string1, fret1, string2, fret2 });
+            if (fret1 !== null && fret2 !== null && 
+                fret1 <= 5 && fret2 <= 5 && 
+                FRET_NOTES[combo.str1][fret1] === combo.n1 && 
+                FRET_NOTES[combo.str2][fret2] === combo.n2) {
+                
+                console.log(`Found valid position: ${combo.str1}(${fret1}):${combo.n1} to ${combo.str2}(${fret2}):${combo.n2}`);
+                positions.push({ 
+                    string1: combo.str1, 
+                    fret1: fret1, 
+                    string2: combo.str2, 
+                    fret2: fret2 
+                });
+            }
         }
     }
     
@@ -198,41 +235,60 @@ function getRandomPosition(interval) {
 } 
 
 function playInterval(scale, intervalType) {
-    let intervals;
-    switch(intervalType) {
-        case 'sixths':
-            intervals = generateSixths(scale);
-            break;
-        case 'thirds':
-            intervals = generateThirds(scale);
-            break;
-        default:
-            console.error('Unknown interval type:', intervalType);
-            return;
-    }
+    let intervals = intervalType === 'sixths' ? generateSixths(scale) : generateThirds(scale);
+    let currentIndex = 0;
+    let currentPositionIndex = 0;
+    const mode = document.getElementById('practiceMode').value;
 
     // Get UI elements
     const playButton = document.getElementById('playButton');
     const tabDisplay = document.getElementById('tabDisplay');
     const noteDisplay = document.getElementById('noteDisplay');
 
-    // Show first interval
-    let currentIndex = 0;
+    function getNextPosition() {
+        const interval = intervals[currentIndex];
+        let position;
+
+        switch(mode) {
+            case 'breadth':
+                // Complete one position for all intervals before moving to next position
+                position = interval.positions[currentPositionIndex % interval.positions.length];
+                if (currentIndex === intervals.length - 1) {
+                    currentPositionIndex++; // Move to next position set after completing all intervals
+                }
+                currentIndex = (currentIndex + 1) % intervals.length;
+                break;
+
+            case 'depth':
+                // Complete all positions for current interval before moving to next interval
+                position = interval.positions[currentPositionIndex];
+                currentPositionIndex = (currentPositionIndex + 1) % interval.positions.length;
+                if (currentPositionIndex === 0) {
+                    currentIndex = (currentIndex + 1) % intervals.length;
+                }
+                break;
+
+            case 'random':
+                // Random interval and random position
+                currentIndex = Math.floor(Math.random() * intervals.length);
+                const randomInterval = intervals[currentIndex];
+                position = randomInterval.positions[Math.floor(Math.random() * randomInterval.positions.length)];
+                break;
+        }
+
+        return { interval: intervals[currentIndex], position };
+    }
 
     function showInterval() {
-        const interval = intervals[currentIndex];
-        const position = getRandomPosition(interval);
+        const { interval, position } = getNextPosition();
         
         // Display the tab
         const tab = createTabNotation(position.string1, position.fret1, position.string2, position.fret2);
         tabDisplay.innerHTML = tab.map(line => line + '<br>').join('');
         
-        // Display the notes and interval count
+        // Display the notes
         noteDisplay.textContent = interval.notes;
         document.getElementById('intervalCount').textContent = `Interval ${currentIndex + 1} of ${intervals.length}`;
-        
-        // Move to next interval
-        currentIndex = (currentIndex + 1) % intervals.length;
     }
 
     // Start playing
@@ -270,8 +326,8 @@ function generateThirds(root) {
     console.log("Scale notes:", scaleNotes);
     const thirds = [];
     
-    for (let i = 0; i < 8; i++) {
-        const startNote = scaleNotes[i % 7];
+    for (let i = 0; i < 7; i++) {
+        const startNote = scaleNotes[i];
         const thirdNote = findThirdInScale(startNote, scaleNotes);
         console.log(`Checking third ${i + 1}: ${startNote}-${thirdNote}`);
         
@@ -328,3 +384,11 @@ function testScale(root) {
 
 // Test all scales
 TEST_SCALES.forEach(scale => testScale(scale)); 
+
+// Add this before generateSixths
+function logPositions(interval) {
+    console.log(`\nInterval ${interval.notes}:`);
+    interval.positions.forEach((pos, idx) => {
+        console.log(`Position ${idx + 1}: ${pos.string1}(${pos.fret1}) to ${pos.string2}(${pos.fret2})`);
+    });
+} 

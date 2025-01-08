@@ -191,3 +191,18 @@ button:hover {
         }
     }
 } 
+
+.interval-count {
+    font-family: monospace;
+    font-size: 1.2em;
+    margin-top: 10px;
+    text-align: left;
+    padding-left: 20px;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .interval-count {
+        font-size: 1.4em;
+    }
+} 

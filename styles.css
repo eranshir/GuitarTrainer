@@ -62,16 +62,69 @@ button:hover {
 
 /* Add mobile-friendly styles */
 @media (max-width: 768px) {
-    .container {
+    body {
         padding: 10px;
     }
     
-    .tab-display {
-        font-size: 0.9em;  /* Smaller font for mobile */
+    .container {
+        padding: 10px;
+        margin: 0;
     }
     
-    .controls {
-        display: flex;
-        flex-direction: column;
+    .tab-display {
+        font-size: 0.8em;  /* Even smaller font for mobile */
+        padding-left: 5px; /* Less padding on mobile */
+        overflow-x: auto;  /* Allow horizontal scroll if needed */
+    }
+    
+    .note-display {
+        font-size: 1em;
+        padding-left: 5px;
+    }
+    
+    .control-group {
+        margin: 10px 0;
+        width: 100%;
+    }
+    
+    select, input[type="range"] {
+        width: 100%;  /* Full width on mobile */
+    }
+    
+    button {
+        width: 100%;
+        margin-top: 20px;
+    }
+    
+    button:active {
+        background: #367c39;  /* Darker green when pressed */
+        transform: scale(0.98);  /* Slight scale down effect */
+    }
+    
+    /* Prevent text selection on double tap */
+    * {
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+    
+    input[type="range"] {
+        height: 25px;  /* Bigger touch target */
+        -webkit-appearance: none;
+        background: transparent;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #4CAF50;
+        margin-top: -8px;
+    }
+    
+    input[type="range"]::-webkit-slider-runnable-track {
+        height: 8px;
+        background: #ddd;
+        border-radius: 4px;
     }
 } 

@@ -1,5 +1,10 @@
 # Guitar Interval Trainer - Progress Log
 
+## v1.0.13 (Current)
+- Fixed iOS audio playback with improved initialization
+- Added silent buffer playback for iOS audio unlock
+- Improved audio initialization on user interaction
+
 ## v1.0.12 (Current)
 - Fixed audio playback on iOS devices
 - Added better audio initialization for mobile browsers

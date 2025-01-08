@@ -1,8 +1,35 @@
 class GuitarSound {
     constructor() {
         this.audioContext = null;
-        this.isMuted = true;  // Start muted
-        this.hasInteracted = false;  // Track if user has interacted
+        this.isMuted = true;
+        this.isInitialized = false;
+    }
+
+    async initAudio() {
+        // Only initialize on first user interaction
+        if (this.isInitialized) return;
+
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.audioContext = new AudioContext();
+            
+            // For iOS, we need to create and play a silent buffer first
+            const silentBuffer = this.audioContext.createBuffer(1, 1, 22050);
+            const source = this.audioContext.createBufferSource();
+            source.buffer = silentBuffer;
+            source.connect(this.audioContext.destination);
+            source.start();
+
+            // Ensure context is running
+            if (this.audioContext.state !== 'running') {
+                await this.audioContext.resume();
+            }
+
+            this.isInitialized = true;
+            console.log('Audio initialized successfully:', this.audioContext.state);
+        } catch (error) {
+            console.error('Audio initialization failed:', error);
+        }
     }
 
     toggleMute() {
@@ -10,38 +37,10 @@ class GuitarSound {
         const muteButton = document.getElementById('muteButton');
         muteButton.textContent = this.isMuted ? '🔇' : '🔊';
         muteButton.classList.toggle('muted', this.isMuted);
-        console.log('Mute toggled:', this.isMuted);
-    }
-
-    async initAudio() {
-        try {
-            if (!this.audioContext) {
-                // Create audio context with options for iOS
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                this.audioContext = new AudioContext({
-                    latencyHint: 'interactive',
-                    sampleRate: 44100
-                });
-
-                // On iOS, we need to resume the context after user interaction
-                if (this.audioContext.state === 'suspended') {
-                    const resumeAudio = async () => {
-                        await this.audioContext.resume();
-                        this.hasInteracted = true;
-                        
-                        // Remove the event listeners once audio is working
-                        document.removeEventListener('touchstart', resumeAudio);
-                        document.removeEventListener('click', resumeAudio);
-                    };
-
-                    document.addEventListener('touchstart', resumeAudio);
-                    document.addEventListener('click', resumeAudio);
-                }
-            }
-            console.log('Audio initialized:', this.audioContext.state);
-        } catch (error) {
-            console.error('Audio initialization failed:', error);
-            alert('Audio playback not supported in this browser.');
+        
+        // Initialize audio on unmute
+        if (!this.isMuted) {
+            this.initAudio();
         }
     }
 
@@ -125,4 +124,19 @@ class GuitarSound {
         this.playNote(freq1, 1);
         this.playNote(freq2, 1);
     }
-} 
+}
+
+// Add event listeners for user interaction
+document.addEventListener('DOMContentLoaded', () => {
+    const guitarSound = new GuitarSound();
+    
+    // Initialize audio on any user interaction
+    const initOnInteraction = async () => {
+        await guitarSound.initAudio();
+        document.removeEventListener('touchstart', initOnInteraction);
+        document.removeEventListener('mousedown', initOnInteraction);
+    };
+    
+    document.addEventListener('touchstart', initOnInteraction);
+    document.addEventListener('mousedown', initOnInteraction);
+}); 

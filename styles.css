@@ -72,14 +72,14 @@ button:hover {
     }
     
     .tab-display {
-        font-size: 1.2em;
+        font-size: 2.4em;
         padding-left: 5px;
         overflow-x: auto;
         white-space: nowrap;
     }
     
     .note-display {
-        font-size: 1.4em;
+        font-size: 2.8em;
         padding-left: 5px;
         white-space: nowrap;
     }
@@ -87,6 +87,7 @@ button:hover {
     .control-group {
         margin: 10px 0;
         width: 100%;
+        font-size: 1.4em;
     }
     
     select, input[type="range"] {
@@ -96,6 +97,7 @@ button:hover {
     button {
         width: 100%;
         margin-top: 20px;
+        font-size: 1.6em;
     }
     
     button:active {
@@ -133,6 +135,11 @@ button:hover {
     /* Add some spacing between tab lines */
     .tab-display br {
         line-height: 1.5;
+    }
+    
+    .version {
+        font-size: 1.4em;
+        margin-top: 15px;
     }
 } 
 

@@ -155,7 +155,10 @@ function generateSixths(root) {
 function findIntervalPositions(note1, note2, intervalType = 'sixths') {
     const stringPairs = intervalType === 'thirds' ? [
         ["e", "B"],    // strings 1 and 2 (high E to B)
-        ["B", "G"]     // strings 2 and 3 (B to G)
+        ["B", "G"],    // strings 2 and 3 (B to G)
+        ["G", "D"],    // strings 3 and 4 (G to D)
+        ["D", "A"],    // strings 4 and 5 (D to A)
+        ["A", "E"]     // strings 5 and 6 (A to E)
     ] : [
         // Sixths pairs (both adjacent and separated by one string)
         ["e", "B"],    // strings 1 and 2
@@ -224,8 +227,9 @@ function playInterval(scale, intervalType) {
         const tab = createTabNotation(position.string1, position.fret1, position.string2, position.fret2);
         tabDisplay.innerHTML = tab.map(line => line + '<br>').join('');
         
-        // Display the notes
+        // Display the notes and interval count
         noteDisplay.textContent = interval.notes;
+        document.getElementById('intervalCount').textContent = `Interval ${currentIndex + 1} of ${intervals.length}`;
         
         // Move to next interval
         currentIndex = (currentIndex + 1) % intervals.length;
@@ -263,22 +267,28 @@ function findThirdInScale(startNote, scaleNotes) {
 
 function generateThirds(root) {
     const scaleNotes = getScaleNotes(root);
+    console.log("Scale notes:", scaleNotes);
     const thirds = [];
     
     for (let i = 0; i < 8; i++) {
         const startNote = scaleNotes[i % 7];
         const thirdNote = findThirdInScale(startNote, scaleNotes);
+        console.log(`Checking third ${i + 1}: ${startNote}-${thirdNote}`);
         
         const allPositions = findIntervalPositions(startNote, thirdNote, 'thirds');
+        console.log(`Found ${allPositions.length} positions`);
         
         if (allPositions.length > 0) {
             thirds.push({
                 notes: `${startNote}-${thirdNote}`,
                 positions: allPositions
             });
+        } else {
+            console.log(`No positions found for ${startNote}-${thirdNote}`);
         }
     }
     
+    console.log("Total thirds generated:", thirds.length);
     return thirds;
 } 
 

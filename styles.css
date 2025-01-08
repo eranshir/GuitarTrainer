@@ -135,3 +135,19 @@ button:hover {
         line-height: 1.5;
     }
 } 
+
+.version {
+    text-align: center;
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+@media (max-width: 768px) {
+    .version {
+        font-size: 0.7em;
+        margin-top: 15px;
+    }
+} 

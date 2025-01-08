@@ -206,3 +206,23 @@ button:hover {
         font-size: 1.4em;
     }
 } 
+
+.mute-button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 10px;
+}
+
+.mute-button.muted {
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .mute-button {
+        font-size: 2em;
+        padding: 10px;
+    }
+} 

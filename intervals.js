@@ -1,3 +1,6 @@
+// Initialize audio
+const guitarSound = new GuitarSound();
+
 const FRET_NOTES = {
     e: {  // high E string
         0: "E",
@@ -288,7 +291,12 @@ function playInterval(scale, intervalType) {
         
         // Display the notes
         noteDisplay.textContent = interval.notes;
-        document.getElementById('intervalCount').textContent = `Interval ${currentIndex + 1} of ${intervals.length}`;
+        document.getElementById('intervalCount').textContent = 
+            `Interval ${currentIndex + 1} of ${intervals.length}`;
+        
+        // Play the notes
+        const [note1, note2] = interval.notes.split('-');
+        guitarSound.playInterval(note1, note2);
     }
 
     // Start playing
@@ -305,14 +313,37 @@ function playInterval(scale, intervalType) {
     };
 }
 
-function startPlaying() {
-    const scale = document.getElementById('scale').value;
-    const intervalType = document.querySelector('input[name="interval"]:checked').value;
-    playInterval(scale, intervalType);
+// Update startPlaying to be async
+async function startPlaying() {
+    try {
+        // Try to initialize audio but don't block if it fails
+        try {
+            await guitarSound.initAudio();
+        } catch (audioError) {
+            console.warn('Audio not available:', audioError);
+            // Continue without audio
+        }
+        
+        const scale = document.getElementById('scale').value;
+        const intervalType = document.querySelector('input[name="interval"]:checked').value;
+        playInterval(scale, intervalType);
+    } catch (error) {
+        console.error('Error starting playback:', error);
+        // Reset button state if something goes wrong
+        const playButton = document.getElementById('playButton');
+        playButton.textContent = 'Play';
+        playButton.onclick = () => {
+            startPlaying().catch(console.error);
+        };
+    }
 }
 
-// Add click handler to play button
-document.getElementById('playButton').onclick = startPlaying; 
+// Update the click handler to handle the async function
+document.getElementById('playButton').onclick = () => {
+    startPlaying().catch(error => {
+        console.error('Error in startPlaying:', error);
+    });
+};
 
 // Function to find the third note from a given note in a scale
 function findThirdInScale(startNote, scaleNotes) {
@@ -392,3 +423,13 @@ function logPositions(interval) {
         console.log(`Position ${idx + 1}: ${pos.string1}(${pos.fret1}) to ${pos.string2}(${pos.fret2})`);
     });
 } 
+
+// Add after guitarSound initialization
+document.getElementById('muteButton').onclick = () => guitarSound.toggleMute();
+
+// Add keyboard shortcut
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 'm') {
+        guitarSound.toggleMute();
+    }
+}); 

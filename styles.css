@@ -58,4 +58,20 @@ button {
 
 button:hover {
     background: #45a049;
+}
+
+/* Add mobile-friendly styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .tab-display {
+        font-size: 0.9em;  /* Smaller font for mobile */
+    }
+    
+    .controls {
+        display: flex;
+        flex-direction: column;
+    }
 } 

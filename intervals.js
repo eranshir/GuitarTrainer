@@ -345,6 +345,10 @@ function playInterval(scale, intervalType) {
         const tab = createTabNotation(position.string1, position.fret1, position.string2, position.fret2);
         tabDisplay.innerHTML = tab.map(line => line + '<br>').join('');
         
+        // Display the neck diagram
+        const neckDiagram = createNeckDiagram(position.string1, position.fret1, position.string2, position.fret2);
+        document.getElementById('neckDisplay').innerHTML = neckDiagram;
+        
         // Get actual notes from the fret positions
         const actualNote1 = FRET_NOTES[position.string1][position.fret1];
         const actualNote2 = FRET_NOTES[position.string2][position.fret2];
@@ -551,3 +555,39 @@ tempoSlider.oninput = function() {
 
 // Initialize tempo display with default value
 tempoValue.textContent = tempoSlider.value;
+
+function createNeckDiagram(string1, fret1, string2, fret2) {
+    const svg = `
+    <svg viewBox="0 0 220 150">
+        <!-- Neck -->
+        <rect x="30" y="10" width="180" height="130" fill="#f4d03f"/>
+        
+        <!-- Fret lines and numbers -->
+        ${[0,1,2,3,4,5].map(i => `
+            <line x1="${30 + (i * 30)}" y1="10" x2="${30 + (i * 30)}" y2="140" 
+                  stroke="black" stroke-width="2"/>
+            <text x="${45 + (i * 30)}" y="145" 
+                  font-size="12" text-anchor="middle">${i + 1}</text>
+        `).join('')}
+        
+        <!-- String names -->
+        ${STRINGS.map((s, i) => `
+            <text x="20" y="${25 + (i * 22)}" 
+                  font-size="12" text-anchor="middle">${s}</text>
+        `).join('')}
+        
+        <!-- Strings -->
+        ${[0,1,2,3,4,5].map(i => 
+            `<line x1="30" y1="${20 + (i * 22)}" x2="210" y2="${20 + (i * 22)}" 
+                   stroke="black" stroke-width="1"/>`
+        ).join('')}
+        
+        <!-- Finger positions -->
+        <circle cx="${30 + (fret1 * 30) - 15}" cy="${20 + (STRINGS.indexOf(string1) * 22)}" 
+                r="8" fill="red"/>
+        <circle cx="${30 + (fret2 * 30) - 15}" cy="${20 + (STRINGS.indexOf(string2) * 22)}" 
+                r="8" fill="blue"/>
+    </svg>`;
+    
+    return svg;
+}

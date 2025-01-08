@@ -41,9 +41,9 @@ body {
 .note-display {
     font-family: monospace;
     font-size: 1.2em;
-    margin-top: 10px;
     text-align: left;
     padding-left: 20px;
+    margin: 10px 0;
 }
 
 button {
@@ -193,12 +193,7 @@ button:hover {
 } 
 
 .interval-count {
-    font-family: monospace;
-    font-size: 1.2em;
-    margin-top: 10px;
-    text-align: left;
-    padding-left: 20px;
-    color: #666;
+    width: auto;
 }
 
 @media (max-width: 768px) {
@@ -255,4 +250,33 @@ button:hover {
         margin-top: 20px;
         font-size: 1.6em;
     }
+} 
+
+.neck-display {
+    text-align: left;
+}
+
+.neck-display svg {
+    width: 300px;
+    height: 150px;
+    margin-left: 20px;
+}
+
+@media (max-width: 768px) {
+    .neck-display svg {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        margin-left: 5px;
+    }
+} 
+
+.display {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.note-display, .interval-count {
+    width: 100%;
 } 

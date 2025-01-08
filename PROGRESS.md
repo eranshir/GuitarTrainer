@@ -1,5 +1,10 @@
 # Guitar Interval Trainer - Progress Log
 
+## v1.0.11 (Current)
+- Added guitar neck diagram visualization
+- Added fret numbers (1-6) and string labels
+- Improved layout with tab, notes, and neck diagram
+
 ## v1.0.10 (Current)
 - Fixed third intervals to show proper ascending thirds (C-E, not E-C)
 - Fixed sixth intervals to show proper ascending sixths (C-A, not A-C)

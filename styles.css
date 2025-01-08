@@ -72,14 +72,16 @@ button:hover {
     }
     
     .tab-display {
-        font-size: 0.8em;  /* Even smaller font for mobile */
-        padding-left: 5px; /* Less padding on mobile */
-        overflow-x: auto;  /* Allow horizontal scroll if needed */
+        font-size: 1.2em;
+        padding-left: 5px;
+        overflow-x: auto;
+        white-space: nowrap;
     }
     
     .note-display {
-        font-size: 1em;
+        font-size: 1.4em;
         padding-left: 5px;
+        white-space: nowrap;
     }
     
     .control-group {
@@ -126,5 +128,10 @@ button:hover {
         height: 8px;
         background: #ddd;
         border-radius: 4px;
+    }
+    
+    /* Add some spacing between tab lines */
+    .tab-display br {
+        line-height: 1.5;
     }
 } 

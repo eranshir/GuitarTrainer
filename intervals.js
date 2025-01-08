@@ -200,80 +200,49 @@ function generateSixths(root) {
 
 // Function to find best positions for an interval
 function findIntervalPositions(note1, note2, intervalType = 'sixths') {
-    const stringPairs = intervalType === 'thirds' ? [
-        ["e", "B"],    // strings 1 and 2 (high E to B)
-        ["B", "G"],    // strings 2 and 3 (B to G)
-        ["G", "D"],    // strings 3 and 4 (G to D)
-        ["D", "A"],    // strings 4 and 5 (D to A)
-        ["A", "E"]     // strings 5 and 6 (A to E)
+    // For both thirds and sixths: first note should be lower than second note
+    const stringPairs = intervalType === 'sixths' ? [
+        // For sixths: lower string to higher string (ascending)
+        ["G", "e"],    // 3 to 1
+        ["D", "B"],    // 4 to 2
+        ["A", "G"],    // 5 to 3
+        ["E", "D"]     // 6 to 4
     ] : [
-        // Adjacent strings
-        ["e", "B"],    // strings 1-2
-        ["B", "G"],    // strings 2-3
-        ["G", "D"],    // strings 3-4
-        ["D", "A"],    // strings 4-5
-        ["A", "E"],    // strings 5-6
-        
-        // One string separation (all combinations)
-        ["e", "G"],    // strings 1-3
-        ["B", "D"],    // strings 2-4
-        ["G", "A"],    // strings 3-5
-        ["D", "E"],    // strings 4-6
-        ["A", "G"],    // strings 5-3 (reverse)
-        ["E", "D"],    // strings 6-4 (reverse)
-        ["B", "e"],    // strings 2-1 (reverse)
-        ["G", "B"],    // strings 3-2 (reverse)
-        ["D", "G"],    // strings 4-3 (reverse)
-        ["A", "D"],    // strings 5-4 (reverse)
-        ["E", "A"],    // strings 6-5 (reverse)
-        
-        // Two strings separation (all combinations)
-        ["e", "D"],    // strings 1-4
-        ["B", "A"],    // strings 2-5
-        ["G", "E"],    // strings 3-6
-        ["D", "e"],    // strings 4-1 (reverse)
-        ["A", "B"],    // strings 5-2 (reverse)
-        ["E", "G"]     // strings 6-3 (reverse)
+        // For thirds: only adjacent strings (ascending)
+        ["B", "e"],    // 2 to 1
+        ["G", "B"],    // 3 to 2
+        ["D", "G"],    // 4 to 3
+        ["A", "D"],    // 5 to 4
+        ["E", "A"]     // 6 to 5
     ];
-    
-    console.log(`\nFinding positions for ${note1} to ${note2} (${intervalType})`);
-    
+
     const positions = [];
 
+    function notesMatch(actual, expected) {
+        return actual === expected || 
+               (actual.includes('/') && actual.split('/').includes(expected)) ||
+               (expected.includes('/') && expected.split('/').includes(actual));
+    }
+
     for (const [string1, string2] of stringPairs) {
-        // Skip if same string
         if (string1 === string2) continue;
         
-        // Try both note orders
-        const combinations = [
-            { str1: string1, str2: string2, n1: note1, n2: note2 }
-            // Remove reverse order - we want specific note order for intervals
-        ];
+        const fret1 = findFretForNote(string1, note1);
+        const fret2 = findFretForNote(string2, note2);
         
-        for (const combo of combinations) {
-            const fret1 = findFretForNote(combo.str1, combo.n1);
-            const fret2 = findFretForNote(combo.str2, combo.n2);
+        if (fret1 !== null && fret2 !== null && fret1 <= 5 && fret2 <= 5) {
+            const actualNote1 = FRET_NOTES[string1][fret1];
+            const actualNote2 = FRET_NOTES[string2][fret2];
             
-            if (fret1 !== null && fret2 !== null && 
-                fret1 <= 5 && fret2 <= 5) {
-                
-                const actualNote1 = FRET_NOTES[combo.str1][fret1];
-                const actualNote2 = FRET_NOTES[combo.str2][fret2];
-                
-                // Strict note matching - no reversing order
-                if ((actualNote1 === combo.n1 || (actualNote1.includes('/') && actualNote1.split('/').includes(combo.n1))) &&
-                    (actualNote2 === combo.n2 || (actualNote2.includes('/') && actualNote2.split('/').includes(combo.n2)))) {
-                    
-                    console.log(`Found valid position: ${combo.str1}(${fret1}):${actualNote1} to ${combo.str2}(${fret2}):${actualNote2}`);
-                    positions.push({ 
-                        string1: combo.str1, 
-                        fret1: fret1, 
-                        string2: combo.str2, 
-                        fret2: fret2,
-                        note1: actualNote1,  // Store actual notes
-                        note2: actualNote2
-                    });
-                }
+            if (notesMatch(actualNote1, note1) && notesMatch(actualNote2, note2)) {
+                positions.push({ 
+                    string1, 
+                    fret1, 
+                    string2, 
+                    fret2,
+                    note1: actualNote1,
+                    note2: actualNote2
+                });
             }
         }
     }
@@ -290,10 +259,17 @@ function getRandomPosition(interval) {
 
 function playInterval(scale, intervalType) {
     let intervals = intervalType === 'sixths' ? generateSixths(scale) : generateThirds(scale);
+    
+    // Check if we have any valid intervals
+    if (!intervals || intervals.length === 0) {
+        console.error('No valid intervals found');
+        return;
+    }
+    
     let currentIndex = 0;
     let currentPositionIndex = 0;
     let isPaused = false;
-    let intervalId = null;  // Track the interval ID
+    let intervalId = null;
     const mode = document.getElementById('practiceMode').value;
 
     // Get UI elements
@@ -317,6 +293,15 @@ function playInterval(scale, intervalType) {
 
     function getNextPosition() {
         const interval = intervals[currentIndex];
+        // Add safety check
+        if (!interval || !interval.positions || interval.positions.length === 0) {
+            console.error('Invalid interval or no positions available');
+            if (intervalId) clearInterval(intervalId);
+            playButton.textContent = 'Play';
+            playButton.onclick = startPlaying;
+            return null;
+        }
+
         let position;
 
         switch(mode) {
@@ -351,7 +336,10 @@ function playInterval(scale, intervalType) {
     }
 
     function showInterval() {
-        const { interval, position } = getNextPosition();
+        const next = getNextPosition();
+        if (!next) return;  // Exit if no valid position
+        
+        const { interval, position } = next;
         
         // Display the tab
         const tab = createTabNotation(position.string1, position.fret1, position.string2, position.fret2);
@@ -361,7 +349,7 @@ function playInterval(scale, intervalType) {
         const actualNote1 = FRET_NOTES[position.string1][position.fret1];
         const actualNote2 = FRET_NOTES[position.string2][position.fret2];
         
-        // Display the actual notes instead of the interval notes
+        // Display the notes in order (low to high for both thirds and sixths)
         noteDisplay.textContent = `${actualNote1}-${actualNote2}`;
         document.getElementById('intervalCount').textContent = 
             `Interval ${currentIndex + 1} of ${intervals.length}`;

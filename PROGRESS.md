@@ -1,5 +1,11 @@
 # Guitar Interval Trainer - Progress Log
 
+## v1.0.10 (Current)
+- Fixed third intervals to show proper ascending thirds (C-E, not E-C)
+- Fixed sixth intervals to show proper ascending sixths (C-A, not A-C)
+- Restricted thirds to adjacent strings only for better playability
+- Fixed note display to match actual intervals
+
 ## v1.0.9 (Current)
 - Added pause/resume functionality
 - Fixed playback controls layout on mobile

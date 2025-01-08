@@ -1,5 +1,9 @@
 # Guitar Interval Trainer - Progress Log
 
+## v1.0.12 (Current)
+- Fixed audio playback on iOS devices
+- Added better audio initialization for mobile browsers
+
 ## v1.0.11 (Current)
 - Added guitar neck diagram visualization
 - Added fret numbers (1-6) and string labels

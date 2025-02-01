@@ -628,3 +628,244 @@ function playMetronomeTick() {
     const audio = new Audio('metronome.mp3');
     audio.play().catch(e => console.error('Metronome tick failed to play:', e));
 }
+
+// NEW: Mapping of scale formulas (all in semitones)
+const SCALE_INTERVALS = {
+  "Major": [2,2,1,2,2,2,1],
+  "Minor": [2,1,2,2,1,2,2],
+  "Pentatonic": [3,2,2,3,2], // Minor pentatonic
+  "Blues": [3,2,1,1,3,2],
+  "Dorian": [2,1,2,2,2,1,2],
+  "Phrygian": [1,2,2,2,1,2,2],
+  "Lydian": [2,2,2,1,2,2,1],
+  "Mixolydian": [2,2,1,2,2,1,2],
+  "Locrian": [1,2,2,1,2,2,2],
+  "Harmonic Minor": [2,1,2,2,1,3,1],
+  "Melodic Minor": [2,1,2,2,2,2,1]
+};
+
+// NEW: Generate array of scale notes based on key and scale type.
+function generateScaleNotes(key, scaleType) {
+    const formula = SCALE_INTERVALS[scaleType];
+    if (!formula) return [];
+    const notes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    let scale = [key];
+    let currentIndex = notes.indexOf(key);
+    if (currentIndex === -1) return [];
+    for (let i = 0; i < formula.length; i++) {
+       currentIndex = (currentIndex + formula[i]) % 12;
+       scale.push(notes[currentIndex]);
+    }
+    return scale;
+}
+
+// NEW: Given a note, return a practical position on the fretboard.
+// Try strings in order from high to low.
+function getScalePosition(note) {
+    const stringsOrder = ["e", "B", "G", "D", "A", "E"];
+    for (const s of stringsOrder) {
+        const fret = findFretForNote(s, note);
+        if (fret !== null && fret <= 5) {
+            return { string: s, fret: fret };
+        }
+    }
+    return null;
+}
+
+// NEW: Create a guitar neck diagram for scale mode (highlight one note).
+function createNeckDiagramForScale(pos) {
+    if (!pos) return "";
+    const svg = `
+    <svg viewBox="0 0 220 150">
+        <!-- Neck background -->
+        <rect x="30" y="10" width="180" height="130" fill="#f4d03f"/>
+        
+        <!-- Fret lines with numbers (1-6) -->
+        ${[0,1,2,3,4,5].map(i => `
+            <line x1="${30 + (i * 30)}" y1="10" x2="${30 + (i * 30)}" y2="140" stroke="black" stroke-width="2"/>
+            <text x="${45 + (i * 30)}" y="145" font-size="12" text-anchor="middle">${i+1}</text>
+        `).join('')}
+        
+        <!-- String labels -->
+        ${STRINGS.map((s, i) => `
+            <text x="20" y="${25 + (i * 22)}" font-size="12" text-anchor="middle">${s}</text>
+        `).join('')}
+        
+        <!-- Strings -->
+        ${[0,1,2,3,4,5].map(i => 
+            `<line x1="30" y1="${20 + (i * 22)}" x2="210" y2="${20 + (i * 22)}" stroke="black" stroke-width="1"/>`
+        ).join('')}
+        
+        <!-- Highlighted note position -->
+        <circle cx="${30 + (pos.fret * 30) - 15}" cy="${20 + (STRINGS.indexOf(pos.string) * 22)}" r="8" fill="red"/>
+    </svg>
+    `;
+    return svg;
+}
+
+// NEW: Create a simple guitar tab representation for a single note using its position.
+function createScaleTab(note) {
+    const pos = getScalePosition(note);
+    let tab = "";
+    // STRINGS is assumed to be defined globally as: ["e", "B", "G", "D", "A", "E"]
+    STRINGS.forEach(s => {
+        let line = s + "|";
+        if (pos && pos.string === s) {
+            // Place fret number at center (adjust spacing as needed)
+            line += "---" + pos.fret + "---";
+        } else {
+            line += "-------";
+        }
+        tab += line + "\n";
+    });
+    return tab;
+}
+
+// NEW: Create a full scale tab showing the entire scale, with the current note highlighted.
+function createFullScaleTab(scaleNotes, currentIndex) {
+    let tab = "";
+    // STRINGS is assumed to be defined globally as: ["e", "B", "G", "D", "A", "E"]
+    STRINGS.forEach(s => {
+        let line = s + "|";
+        scaleNotes.forEach((note, idx) => {
+            const pos = getLowScalePosition(note);
+            let cell = "-------";
+            if (pos && pos.string === s) {
+                let fretStr = String(pos.fret);
+                if (idx === currentIndex) {
+                    fretStr = "[" + fretStr + "]"; // highlight current note
+                }
+                // Force a fixed width cell of 7 characters.
+                cell = fretStr.padStart(3, "-").padEnd(7, "-");
+            }
+            line += cell;
+        });
+        tab += line + "\n";
+    });
+    return tab;
+}
+
+// NEW: Play scale mode.
+// Modified to update UI: switch play button to "Stop", enable pause button,
+// show both a text (letters) representation and a tab representation.
+function playScaleMode(scaleType, key) {
+    const scaleNotes = generateScaleNotes(key, scaleType);
+    if (!scaleNotes || scaleNotes.length === 0) {
+        console.error("No scale notes generated.");
+        return;
+    }
+    let currentIndex = 0;
+    const tabDisplay = document.getElementById('tabDisplay');      // Letters representation
+    const scaleTabDisplay = document.getElementById('scaleTabDisplay');  // Tab representation
+    const neckDisplay = document.getElementById('neckDisplay');
+    const playButton = document.getElementById('playButton');
+    const pauseButton = document.getElementById('pauseButton');
+    let scaleIntervalId = null;
+  
+    function updateScaleDisplay() {
+        // Compute ascending positions for the entire scale.
+        const positions = getAscendingScalePositions(scaleNotes);
+        // Show the full scale tab with current note highlighted using the computed positions.
+        scaleTabDisplay.textContent = createFullScaleTabFromPositions(scaleNotes, positions, currentIndex);
+        
+        // Update neck diagram for current note using the ascending (continuous) position.
+        const pos = positions[currentIndex];
+        neckDisplay.innerHTML = createNeckDiagramForScale(pos);
+        
+        // Play the note. Use the string from the position (fallback to "e").
+        const stringUsed = pos ? pos.string : "e";
+        guitarSound.playNote(guitarSound.noteToFrequency(scaleNotes[currentIndex], stringUsed));
+    }
+  
+    updateScaleDisplay();
+    // Use tempo from the BPM slider
+    const tempo = document.getElementById('tempo').value;
+    scaleIntervalId = setInterval(() => {
+        currentIndex = (currentIndex + 1) % scaleNotes.length;
+        updateScaleDisplay();
+    }, (60 / tempo) * 1000);
+  
+    // Update UI: change Play button to Stop and enable Pause.
+    playButton.textContent = "Stop";
+    pauseButton.disabled = false;
+  
+    // Override playButton click to function as Stop in scale mode.
+    playButton.onclick = () => {
+        clearInterval(scaleIntervalId);
+        playButton.textContent = "Play";
+        pauseButton.disabled = true;
+        // Reassign playButton's onclick to resume scale mode using the current selections.
+        playButton.onclick = () => {
+            const newScaleType = document.getElementById('scaleType').value;
+            const newScaleKey  = document.getElementById('scaleKey').value;
+            playScaleMode(newScaleType, newScaleKey);
+        };
+    };
+}
+
+// NEW: Get lowest possible position for a given note (using low-to-high string order).
+function getLowScalePosition(note) {
+    const lowToHighStrings = ["E", "A", "D", "G", "B", "e"];
+    for (const s of lowToHighStrings) {
+        const fret = findFretForNote(s, note);
+        if (fret !== null && fret <= 5) {
+            return { string: s, fret: fret };
+        }
+    }
+    return null;
+}
+
+// NEW: Compute ascending scale positions ensuring a continuous fingering.
+// We want the scale notes to be played on positions that follow the ascending (low-to-high strings) order.
+function getAscendingScalePositions(scaleNotes) {
+    let positions = [];
+    // Define string order from lowest pitched (6th E) to highest (1st e)
+    const orderedStrings = ["E", "A", "D", "G", "B", "e"];
+    // Define offset: E = 0, A = 10, D = 20, G = 30, B = 40, e = 50.
+    const offset = { 'E': 0, 'A': 10, 'D': 20, 'G': 30, 'B': 40, 'e': 50 };
+    scaleNotes.forEach((note, i) => {
+        let candidates = [];
+        orderedStrings.forEach(s => {
+            const fret = findFretForNote(s, note);
+            if (fret !== null) {
+                candidates.push({ string: s, fret: fret, order: offset[s] + fret });
+            }
+        });
+        candidates.sort((a, b) => a.order - b.order);
+        if (i === 0) {
+            positions.push(candidates[0] || null);
+        } else {
+            const prevOrder = positions[i - 1] ? positions[i - 1].order : -1;
+            // Only allow candidates with an order greater than the previous note.
+            let validCandidates = candidates.filter(c => c.order > prevOrder);
+            let candidate = validCandidates.length > 0 ? validCandidates[0]
+                              : (candidates.length > 0 ? candidates[candidates.length - 1] : null);
+            positions.push(candidate);
+        }
+    });
+    return positions;
+}
+
+// NEW: Create a full scale tab using an array of positions, with the current note highlighted.
+function createFullScaleTabFromPositions(scaleNotes, positions, currentIndex) {
+    let tab = "";
+    // STRINGS is assumed to be defined globally as: ["e", "B", "G", "D", "A", "E"]
+    STRINGS.forEach(s => {
+        let line = s + "|";
+        scaleNotes.forEach((note, idx) => {
+            let cell = "-------";
+            const pos = positions[idx];
+            if (pos && pos.string === s) {
+                let fretStr = String(pos.fret);
+                if (idx === currentIndex) {
+                    fretStr = "[" + fretStr + "]"; // highlight current note
+                }
+                // Force a fixed-width cell of 7 characters.
+                cell = fretStr.padStart(3, "-").padEnd(7, "-");
+            }
+            line += cell;
+        });
+        tab += line + "\n";
+    });
+    return tab;
+}

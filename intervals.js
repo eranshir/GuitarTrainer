@@ -1,6 +1,9 @@
 // Initialize audio
 const guitarSound = new GuitarSound();
 
+let metronomeOn = false;
+let metronomeInterval = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize mute button state
     const muteButton = document.getElementById('muteButton');
@@ -16,6 +19,34 @@ document.addEventListener('DOMContentLoaded', () => {
             guitarSound.toggleMute();
         }
     });
+
+    const metroButton = document.getElementById('metroButton');
+    metroButton.onclick = () => {
+        metronomeOn = !metronomeOn;
+        metroButton.textContent = metronomeOn ? 'Metronome On' : 'Metronome Off';
+        const tempo = document.getElementById('tempo').value;
+        if (metronomeOn) {
+            // Set the interval for the metronome tick, matching the BPM
+            metronomeInterval = setInterval(playMetronomeTick, (60 / tempo) * 1000);
+        } else {
+            clearInterval(metronomeInterval);
+            metronomeInterval = null;
+        }
+    };
+
+    // (Optional) Update metronome timing if the tempo slider changes:
+    const tempoSlider = document.getElementById('tempo');
+    const tempoValue   = document.getElementById('tempoValue');
+    tempoSlider.oninput = function() {
+        // Update tempo indicator element
+        tempoValue.textContent = this.value;
+
+        // Update metronome interval if active
+        if (metronomeOn) {
+            clearInterval(metronomeInterval);
+            metronomeInterval = setInterval(playMetronomeTick, (60 / this.value) * 1000);
+        }
+    };
 });
 
 const FRET_NOTES = {
@@ -590,4 +621,10 @@ function createNeckDiagram(string1, fret1, string2, fret2) {
     </svg>`;
     
     return svg;
+}
+
+// Function to play a metronome tick using an mp3 file
+function playMetronomeTick() {
+    const audio = new Audio('metronome.mp3');
+    audio.play().catch(e => console.error('Metronome tick failed to play:', e));
 }

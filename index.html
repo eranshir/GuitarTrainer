@@ -7,7 +7,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Guitar Interval Trainer</h1>
+        <h1>Guitar Trainer</h1>
         
         <div class="trainer-mode-group" style="margin:10px 20px; text-align:left;">
             <label style="margin-right:10px;">
@@ -21,49 +21,87 @@
         </div>
 
         <div class="controls">
-            <div class="control-group">
-                <label>Interval Type:</label>
-                <div class="radio-group">
-                    <input type="radio" id="sixths" name="interval" value="sixths" checked>
-                    <label for="sixths">Sixths</label>
-                    
-                    <input type="radio" id="thirds" name="interval" value="thirds">
-                    <label for="thirds">Thirds</label>
-                </div>
+            <!-- Mode selection: choose Interval Trainer or Scale Trainer -->
+            <div class="control-group mode-selection" style="margin:10px 20px; text-align:left;">
+                <label style="margin-right:10px;">
+                    <input type="radio" name="trainerMode" value="intervals" checked>
+                    Interval Trainer
+                </label>
+                <label>
+                    <input type="radio" name="trainerMode" value="scales">
+                    Scale Trainer
+                </label>
             </div>
 
-            <div class="control-group">
-                <label for="scale">Scale:</label>
-                <select id="scale">
-                    <option value="C">C Major</option>
-                    <option value="G">G Major</option>
-                    <option value="D">D Major</option>
-                    <option value="A">A Major</option>
-                    <option value="F">F Major</option>
-                    <option value="E">E Major</option>
-                </select>
-            </div>
-
+            <!-- Common controls -->
             <div class="control-group">
                 <label for="tempo">Tempo (BPM):</label>
                 <input type="range" id="tempo" min="15" max="120" value="60">
                 <span id="tempoValue">60</span>
             </div>
-
             <div class="control-group">
-                <label>Practice Mode:</label>
-                <select id="practiceMode">
-                    <option value="breadth">Breadth First</option>
-                    <option value="depth">Depth First</option>
-                    <option value="random">Random</option>
+                <label for="keySelect">Key:</label>
+                <select id="keySelect">
+                    <option value="C">C</option>
+                    <option value="C#">C#</option>
+                    <option value="D">D</option>
+                    <option value="D#">D#</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                    <option value="F#">F#</option>
+                    <option value="G">G</option>
+                    <option value="G#">G#</option>
+                    <option value="A">A</option>
+                    <option value="A#">A#</option>
+                    <option value="B">B</option>
                 </select>
             </div>
 
-            <div class="control-group">
-                <button id="muteButton" class="mute-button muted" title="Toggle sound (M)">🔇</button>
+            <!-- Interval Trainer controls -->
+            <div id="intervalControls">
+                <div class="control-group">
+                    <label>Interval Type:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="sixths" name="interval" value="sixths" checked>
+                        <label for="sixths">Sixths</label>
+                        
+                        <input type="radio" id="thirds" name="interval" value="thirds">
+                        <label for="thirds">Thirds</label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Practice Mode:</label>
+                    <select id="practiceMode">
+                        <option value="breadth">Breadth First</option>
+                        <option value="depth">Depth First</option>
+                        <option value="random">Random</option>
+                    </select>
+                </div>
             </div>
 
+            <!-- Scale Trainer controls -->
+            <div id="scaleControls" style="display:none;">
+                <div class="control-group">
+                    <label for="scaleType">Scale Type:</label>
+                    <select id="scaleType">
+                        <option value="Major">Major (Ionian)</option>
+                        <option value="Minor">Minor (Aeolian)</option>
+                        <option value="Pentatonic">Pentatonic</option>
+                        <option value="Blues">Blues</option>
+                        <option value="Dorian">Dorian</option>
+                        <option value="Phrygian">Phrygian</option>
+                        <option value="Lydian">Lydian</option>
+                        <option value="Mixolydian">Mixolydian</option>
+                        <option value="Locrian">Locrian</option>
+                        <option value="Harmonic Minor">Harmonic Minor</option>
+                        <option value="Melodic Minor">Melodic Minor</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Playback Buttons -->
             <div class="playback-controls">
+                <button id="muteButton" class="mute-button muted" title="Toggle sound (M)">🔇</button>
                 <button id="playButton">Play</button>
                 <button id="pauseButton" disabled>Pause</button>
                 <button id="metroButton">Metronome Off</button>
@@ -134,14 +172,21 @@
       document.addEventListener('DOMContentLoaded', () => {
         const scaleOptions = document.getElementById('scaleOptions');
         const trainerRadios = document.getElementsByName('trainerMode');
-        // When mode changes, show/hide scale options.
+        const storedMode = localStorage.getItem("trainerMode") || "intervals";
+        // Set the checked radio and show/hide scale options based on stored mode.
         trainerRadios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                if (radio.checked && radio.value === 'scales') {
+            if (radio.value === storedMode) {
+                radio.checked = true;
+                if (storedMode === "scales") {
                     scaleOptions.style.display = 'block';
-                } else if (radio.checked && radio.value === 'intervals') {
+                } else {
                     scaleOptions.style.display = 'none';
                 }
+            }
+            radio.addEventListener('change', () => {
+                localStorage.setItem("trainerMode", radio.value);
+                // Reset UI as if reloaded fresh by reloading the page.
+                window.location.reload();
             });
         });
 
@@ -150,12 +195,30 @@
             const mode = document.querySelector('input[name="trainerMode"]:checked').value;
             if (mode === 'scales') {
                 const scaleType = document.getElementById('scaleType').value;
-                const scaleKey  = document.getElementById('scaleKey').value;
-                playScaleMode(scaleType, scaleKey);
+                const key = document.getElementById('keySelect').value;
+                playScaleMode(scaleType, key);
             } else {
-                startPlaying();
+                const intervalType = document.querySelector('input[name="interval"]:checked').value;
+                const practiceMode = document.getElementById('practiceMode').value;
+                const key = document.getElementById('keySelect').value;
+                // startPlaying() should use intervalType, practiceMode, and key.
+                startPlaying(intervalType, practiceMode, key);
             }
         };
+
+        // Toggle mode-specific controls on mode change:
+        const modeRadios = document.getElementsByName('trainerMode');
+        modeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.checked && radio.value === 'scales') {
+                    document.getElementById('intervalControls').style.display = 'none';
+                    document.getElementById('scaleControls').style.display = 'block';
+                } else if (radio.checked && radio.value === 'intervals') {
+                    document.getElementById('scaleControls').style.display = 'none';
+                    document.getElementById('intervalControls').style.display = 'block';
+                }
+            });
+        });
       });
     </script>
 </body>
